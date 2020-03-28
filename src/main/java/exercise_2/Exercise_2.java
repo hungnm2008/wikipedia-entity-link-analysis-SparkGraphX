@@ -26,21 +26,36 @@ public class Exercise_2 {
     private static class VProg extends AbstractFunction3<Long,Integer,Integer,Integer> implements Serializable {
         @Override
         public Integer apply(Long vertexID, Integer vertexValue, Integer message) {
-            return null;
+            if (message > Integer.MAX_VALUE) {
+                return vertexValue;
+            } else {
+                return Math.min(Math.abs(vertexValue),Math.abs(message));
+            }
         }
     }
 
     private static class sendMsg extends AbstractFunction1<EdgeTriplet<Integer,Integer>, Iterator<Tuple2<Object,Integer>>> implements Serializable {
         @Override
         public Iterator<Tuple2<Object, Integer>> apply(EdgeTriplet<Integer, Integer> triplet) {
-            return null;
+
+            Tuple2<Object,Integer> sourceVertex = triplet.toTuple()._1();
+            Tuple2<Object,Integer> dstVertex = triplet.toTuple()._2();
+            Integer attr = triplet.attr;
+
+            if (Math.abs(dstVertex._2) <= Math.abs(sourceVertex._2) + attr) {   // source vertex value is smaller than dst vertex?
+                return JavaConverters.asScalaIteratorConverter(new ArrayList<Tuple2<Object,Integer>>().iterator()).asScala();
+            } else {
+                // propagate source vertex value
+                return JavaConverters.asScalaIteratorConverter(Arrays.asList(new Tuple2<Object,Integer>(triplet.dstId(),Math.abs(sourceVertex._2)+ attr)).iterator()).asScala();
+            }
         }
     }
 
     private static class merge extends AbstractFunction2<Integer,Integer,Integer> implements Serializable {
         @Override
         public Integer apply(Integer o, Integer o2) {
-            return null;
+
+            return Math.min(Math.abs(o),Math.abs(o2));
         }
     }
 
@@ -89,10 +104,11 @@ public class Exercise_2 {
                 ClassTag$.MODULE$.apply(Integer.class))
             .vertices()
             .toJavaRDD()
+                .sortBy(f -> ((Tuple2<Object, Integer>) f)._2, true, 0)
             .foreach(v -> {
                 Tuple2<Object,Integer> vertex = (Tuple2<Object,Integer>)v;
                 System.out.println("Minimum cost to get from "+labels.get(1l)+" to "+labels.get(vertex._1)+" is "+vertex._2);
             });
 	}
-	
+
 }
