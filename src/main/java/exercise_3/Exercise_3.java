@@ -86,6 +86,12 @@ public class Exercise_3 {
                 .put(6l, "F")
                 .build();
 
+        /*
+        * Each vertex value is an ArrayList [4, 1, 2]
+        * The first value in the ArrayList represent the cost from A to the vertex itself
+        * The path is represented by a chain of vertexID starting from the second value in the Arraylist above
+        * */
+        
         List<Tuple2<Object, ArrayList<Long>>> vertices = Lists.newArrayList(
                 new Tuple2<Object, ArrayList<Long>>(1l, new ArrayList<Long>(Arrays.asList(0l, 1l))),
                 new Tuple2<Object, ArrayList<Long>>(2l, new ArrayList<Long>(Arrays.asList(Long.MAX_VALUE))),
