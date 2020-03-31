@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import static org.apache.spark.sql.functions.col;
 
 public class Exercise_4 {
 
@@ -78,7 +79,15 @@ public class Exercise_4 {
 		gf.edges().show();
 		gf.vertices().show();
 
-
+		System.out.println("Following is the output of the page rank algorithm: ");
+		gf.pageRank()
+				.maxIter(1)
+				.resetProbability(0.15) //damping factor = 1-resetProbability
+				.run()
+				.vertices()
+				.orderBy(col("pagerank").desc())
+				.limit(20)
+				.show();
 
 	}
 
