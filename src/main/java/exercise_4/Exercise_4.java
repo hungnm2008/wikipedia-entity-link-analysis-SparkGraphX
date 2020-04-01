@@ -32,7 +32,7 @@ public class Exercise_4 {
 		try {
 			BufferedReader wikiVerticesReader = new BufferedReader(
 					//How to load resource in a relative way?
-					new FileReader("/Users/akashmalhotra/Documents/SDM/SparkGraphXassignment/src/main/resources/wiki-vertices.txt")
+					new FileReader("target/classes/wiki-vertices.txt")
 			);
 			String line;
 			while ((line = wikiVerticesReader.readLine()) != null) {
@@ -54,7 +54,7 @@ public class Exercise_4 {
 		List<Row> edges_list = new ArrayList<Row>();
 		try {
 			BufferedReader wikiEdgesReader = new BufferedReader(
-					new FileReader("/Users/akashmalhotra/Documents/SDM/SparkGraphXassignment/src/main/resources/wiki-edges.txt")
+					new FileReader("target/classes/wiki-edges.txt")
 			);
 			String line;
 			while ((line = wikiEdgesReader.readLine()) != null) {
