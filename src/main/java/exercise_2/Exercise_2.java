@@ -27,8 +27,10 @@ public class Exercise_2 {
         @Override
         public Integer apply(Long vertexID, Integer vertexValue, Integer message) {
             if (message == Integer.MAX_VALUE) {
+                // superstep 0
                 return vertexValue;
             } else {
+                // superstep > 0:return the min of vetex value and incoming messages
                 return Math.min(Math.abs(vertexValue),Math.abs(message));
             }
         }
@@ -40,12 +42,13 @@ public class Exercise_2 {
 
             Tuple2<Object,Integer> sourceVertex = triplet.toTuple()._1();
             Tuple2<Object,Integer> dstVertex = triplet.toTuple()._2();
-            Integer attr = triplet.attr;
+            Integer attr = triplet.attr; // message value
 
-            if (Math.abs(dstVertex._2) <= Math.abs(sourceVertex._2) + attr) {   // source vertex value is smaller than dst vertex?
+            if (Math.abs(dstVertex._2) <= Math.abs(sourceVertex._2) + attr) {
+                // if source vertex value + message value is smaller than dst vertex?
                 return JavaConverters.asScalaIteratorConverter(new ArrayList<Tuple2<Object,Integer>>().iterator()).asScala();
             } else {
-                // propagate source vertex value
+                // otherwise propagate source vertex value
                 return JavaConverters.asScalaIteratorConverter(Arrays.asList(new Tuple2<Object,Integer>(triplet.dstId(),Math.abs(sourceVertex._2)+ attr)).iterator()).asScala();
             }
         }
@@ -54,7 +57,7 @@ public class Exercise_2 {
     private static class merge extends AbstractFunction2<Integer,Integer,Integer> implements Serializable {
         @Override
         public Integer apply(Integer o, Integer o2) {
-
+            // choose the message with the minimum value among incoming messages
             return Math.min(Math.abs(o),Math.abs(o2));
         }
     }

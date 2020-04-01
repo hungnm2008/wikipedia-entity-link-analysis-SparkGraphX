@@ -35,11 +35,14 @@ public class Exercise_3 {
 
             //Superstep>0
             else {
+                // check the cost of current vertex and incoming message
                 if (Math.abs(message.get(0)) >= Math.abs(vertexValue.get(0))) {
+                    // add this vertex to the path and return
                     vertexValue.add(vertexID);
                     return vertexValue;
                 }
                 else {
+                    // add this vertex to the path and return
                     message.add(vertexID);
                     return message;
                 }
@@ -53,15 +56,15 @@ public class Exercise_3 {
 
             Tuple2<Object, ArrayList<Long>> sourceVertex = triplet.toTuple()._1();
             Tuple2<Object, ArrayList<Long>> dstVertex = triplet.toTuple()._2();
-            Long attr = (long)triplet.attr;
+            Long attr = (long)triplet.attr; // message value
 
         if (Math.abs(dstVertex._2.get(0)) <= Math.abs(sourceVertex._2.get(0)) + attr) {
-            // source vertex value + attr is greater than dst vertex
+            //  if source vertex value + message value is greater than dst vertex value => Do nothing
             return JavaConverters.asScalaIteratorConverter(new ArrayList<Tuple2<Object, ArrayList<Long>>>().iterator()).asScala();
         } else {
-            // propagate source vertex value
-            ArrayList<Long> result = sourceVertex._2;
-            result.set(0, Math.abs(result.get(0))+ attr);
+            // otherwise propagate source vertex value => Send the message with message value = ArrayList of the source vertex
+            ArrayList<Long> result = sourceVertex._2; // temporary variable
+            result.set(0, Math.abs(result.get(0))+ attr); // update the cost by changing the first element int the ArrayList
             return JavaConverters.asScalaIteratorConverter(Arrays.asList(new Tuple2<Object,ArrayList<Long>>(triplet.dstId(),result)).iterator()).asScala();
             }
         }
@@ -70,6 +73,7 @@ public class Exercise_3 {
     private static class merge extends AbstractFunction2<ArrayList<Long>, ArrayList<Long>, ArrayList<Long>> implements Serializable {
         @Override
         public ArrayList<Long> apply(ArrayList<Long> o, ArrayList<Long> o2) {
+            // Choose the minimum value among incoming messages
             if(Math.abs(o.get(0))<=Math.abs(o2.get(0)))
                 return o;
             else
@@ -87,9 +91,12 @@ public class Exercise_3 {
                 .build();
 
         /*
-        * Each vertex value is an ArrayList [4, 1, 2]
+        * Each vertex value is an ArrayList: arr[]
         * The first value in the ArrayList represent the cost from A to the vertex itself
         * The path is represented by a chain of vertexID starting from the second value in the Arraylist above
+        * For example:
+        * arr[0]: cost of the shortest path
+        * arr[1], arr[2], arr[3], ... : vertexIDs in the shortest path
         * */
         
         List<Tuple2<Object, ArrayList<Long>>> vertices = Lists.newArrayList(
