@@ -7,14 +7,18 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.execution.columnar.NULL;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.graphframes.GraphFrame;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.nio.Buffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,7 +27,7 @@ import static org.apache.spark.sql.functions.col;
 public class Exercise_4 {
 
 	public static void wikipedia(JavaSparkContext ctx, SQLContext sqlCtx) {
-		java.util.List<Row> vertices_list = new ArrayList<Row>();
+		List<Row> vertices_list = new ArrayList<Row>();
 		//load the vertices
 		try {
 			BufferedReader wikiVerticesReader = new BufferedReader(
@@ -49,7 +53,7 @@ public class Exercise_4 {
 
 		Dataset<Row> vertices =  sqlCtx.createDataFrame(vertices_rdd, vertices_schema);
 		//load the edges
-		java.util.List<Row> edges_list = new ArrayList<Row>();
+		List<Row> edges_list = new ArrayList<Row>();
 		try {
 			BufferedReader wikiEdgesReader = new BufferedReader(
 					//find a better way to load resource, otherwise modify the local path
@@ -79,15 +83,68 @@ public class Exercise_4 {
 		gf.edges().show();
 		gf.vertices().show();
 
-		System.out.println("Following is the output of the page rank algorithm: ");
-		gf.pageRank()
-				.maxIter(1)
-				.resetProbability(0.15) //damping factor = 1-resetProbability
-				.run()
-				.vertices()
-				.orderBy(col("pagerank").desc())
-				.limit(20)
-				.show();
+
+		System.out.println("PageRank algorithm: ");
+		//tune maximum iterations
+		/*
+		int i = 1;
+		Dataset<Row> previousVertices =
+				gf.pageRank()
+						.maxIter(i)
+						.resetProbability(0.15) //damping factor = 1-resetProbability
+						.run()
+						.vertices()
+						.orderBy(col("pagerank").desc())
+						.limit(10);
+
+		Dataset<Row> currentVertices;
+		for(i = 2; i < 20; i++) {
+			System.out.println("This iteration: "+ i);
+			currentVertices =
+					gf.pageRank()
+					.maxIter(i)
+					.resetProbability(0.15) //damping factor = 1-resetProbability
+					.run()
+					.vertices()
+					.orderBy(col("pagerank").desc())
+					.limit(10);
+			currentVertices.show();
+			if(currentVertices.select("id").toJavaRDD().collect().equals(previousVertices.select("id").toJavaRDD().collect())) {
+				System.out.println("Optimum iterations for PageRank : "+i);
+				currentVertices.show();
+				break;
+			}else{
+				previousVertices = currentVertices;
+			}
+		}*/
+		//tune resetProbability
+
+		int maxIterations = 11;
+		double resetProb = 0.70;
+		for(int i =0; i < 7; i++){
+			java.util.List<Row> distribution = gf.pageRank()
+					.maxIter(maxIterations)
+					.resetProbability(resetProb) //damping factor = 1-resetProbability
+					.run()
+					.vertices()
+					.select("pagerank").toJavaRDD().collect();
+			try {
+				BufferedWriter bw = new BufferedWriter(new FileWriter("distribution" + resetProb + ".txt"));
+				Iterator<Row> iterator = distribution.iterator();
+				while (iterator.hasNext()) {
+					bw.append(iterator.next().get(0).toString());
+					bw.newLine();
+				}
+				bw.flush();
+				bw.close();
+			}catch (Exception e){
+				System.out.println(e.getStackTrace());
+			}
+
+
+		}
+
+
 
 	}
 
