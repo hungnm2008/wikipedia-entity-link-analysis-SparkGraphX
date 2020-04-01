@@ -31,14 +31,12 @@ public class Exercise_4 {
 		//load the vertices
 		try {
 			BufferedReader wikiVerticesReader = new BufferedReader(
-					//find a better way to load resource
+					//How to load resource in a relative way?
 					new FileReader("/Users/akashmalhotra/Documents/SDM/SparkGraphXassignment/src/main/resources/wiki-vertices.txt")
 			);
-			//String[] content;
 			String line;
 			while ((line = wikiVerticesReader.readLine()) != null) {
 				String[] tokens = line.split("\\s+", 2);
-				//System.out.println(tokens[0] + " " + tokens[1]);
 				vertices_list.add(RowFactory.create(tokens[0], tokens[1]));
 			}
 		}catch(Exception e){
@@ -56,13 +54,11 @@ public class Exercise_4 {
 		List<Row> edges_list = new ArrayList<Row>();
 		try {
 			BufferedReader wikiEdgesReader = new BufferedReader(
-					//find a better way to load resource, otherwise modify the local path
 					new FileReader("/Users/akashmalhotra/Documents/SDM/SparkGraphXassignment/src/main/resources/wiki-edges.txt")
 			);
 			String line;
 			while ((line = wikiEdgesReader.readLine()) != null) {
 				String[] tokens = line.split("\\s+", 2);
-				//System.out.println(tokens[0] + " " + tokens[1]);
 				edges_list.add(RowFactory.create(tokens[0], tokens[1]));
 			}
 		}catch(Exception e){
@@ -71,43 +67,25 @@ public class Exercise_4 {
 		JavaRDD<Row> edges_rdd = ctx.parallelize(edges_list);
 		StructType edges_schema = new StructType(new StructField[]{
 				new StructField("src", DataTypes.StringType, true, new MetadataBuilder().build()),
-				new StructField("dst", DataTypes.StringType, true, new MetadataBuilder().build()),
-				//new StructField("relationship", DataTypes.StringType, true, new MetadataBuilder().build())
+				new StructField("dst", DataTypes.StringType, true, new MetadataBuilder().build())
 		});
 		Dataset<Row> edges = sqlCtx.createDataFrame(edges_rdd, edges_schema);
 
+		//create the graphframe
 		GraphFrame gf = GraphFrame.apply(vertices,edges);
-
 		System.out.println(gf);
-
 		gf.edges().show();
 		gf.vertices().show();
 
 
 		System.out.println("PageRank algorithm: ");
 		//tune maximum iterations
-		/*
-		int i = 1;
-		Dataset<Row> previousVertices =
-				gf.pageRank()
-						.maxIter(i)
-						.resetProbability(0.15) //damping factor = 1-resetProbability
-						.run()
-						.vertices()
-						.orderBy(col("pagerank").desc())
-						.limit(10);
-
+		Dataset<Row> previousVertices = pageRank(gf,1,0.15).orderBy(col("pagerank").desc()).limit(10);
+		previousVertices.show();
 		Dataset<Row> currentVertices;
-		for(i = 2; i < 20; i++) {
+		for(int i = 2; i < 20; i++) {
 			System.out.println("This iteration: "+ i);
-			currentVertices =
-					gf.pageRank()
-					.maxIter(i)
-					.resetProbability(0.15) //damping factor = 1-resetProbability
-					.run()
-					.vertices()
-					.orderBy(col("pagerank").desc())
-					.limit(10);
+			currentVertices = pageRank(gf,i,0.15).orderBy(col("pagerank").desc()).limit(10);
 			currentVertices.show();
 			if(currentVertices.select("id").toJavaRDD().collect().equals(previousVertices.select("id").toJavaRDD().collect())) {
 				System.out.println("Optimum iterations for PageRank : "+i);
@@ -116,20 +94,14 @@ public class Exercise_4 {
 			}else{
 				previousVertices = currentVertices;
 			}
-		}*/
+		}
 		//tune resetProbability
-
-		int maxIterations = 11;
-		double resetProb = 0.70;
-		for(int i =0; i < 7; i++){
-			java.util.List<Row> distribution = gf.pageRank()
-					.maxIter(maxIterations)
-					.resetProbability(resetProb) //damping factor = 1-resetProbability
-					.run()
-					.vertices()
-					.select("pagerank").toJavaRDD().collect();
+		int maxIterations = 11; //optimum iterations
+		double damping = 0.70;
+		for(int i =0; i < 6; i++){
+			List<Row> distribution = pageRank(gf,maxIterations,1-damping).select("pagerank").toJavaRDD().collect();
 			try {
-				BufferedWriter bw = new BufferedWriter(new FileWriter("distribution" + resetProb + ".txt"));
+				BufferedWriter bw = new BufferedWriter(new FileWriter("dist_" + String.format("%.2f", damping) + ".txt"));
 				Iterator<Row> iterator = distribution.iterator();
 				while (iterator.hasNext()) {
 					bw.append(iterator.next().get(0).toString());
@@ -140,12 +112,17 @@ public class Exercise_4 {
 			}catch (Exception e){
 				System.out.println(e.getStackTrace());
 			}
-
-
+			damping += 0.05;
 		}
-
-
-
 	}
+	public static Dataset<Row> pageRank(GraphFrame gf, int iterations, double resetProb){
+		Dataset<Row> result = gf.pageRank()
+								.maxIter(iterations)
+								.resetProbability(resetProb) //damping factor = 1-resetProbability
+								.run()
+								.vertices();
+		return result;
+	}
+
 
 }
